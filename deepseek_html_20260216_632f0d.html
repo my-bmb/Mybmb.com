@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Food Cards - Outside Controls</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        html, body {
+            background-color: #0a0a0a;
+            overflow: hidden;
+            height: 100%;
+            width: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .stack-container {
+            position: fixed;
+            background: #0a0a0a;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        /* Main Card Area */
+        .card-area {
+            flex: 1;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            min-height: 0;
+        }
+
+        .horizontal-scroll-container {
+            display: flex;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-snap-type: x mandatory;
+            gap: 0;
+            padding: 0 calc(50% - 150px);
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            scroll-snap-stop: always;
+            transform: translate3d(0,0,0);
+            -webkit-transform: translate3d(0,0,0);
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            position: relative;
+            overscroll-behavior-x: contain;
+            -webkit-overflow-scrolling: auto;
+        }
+
+        .horizontal-scroll-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Cards */
+        .food-card {
+            min-width: 300px;
+            width: 300px;
+            height: 500px;
+            background: #0a0a0a;
+            border-radius: 40px;
+            overflow: hidden;
+            position: relative;
+            flex-shrink: 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            scroll-snap-align: center;
+            transform: translate3d(0,0,0);
+            -webkit-transform: translate3d(0,0,0);
+            transition: all 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
+            will-change: transform, opacity, filter;
+            margin: 0 -15px;
+            opacity: 0.2;
+            filter: blur(4px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* Videos - Sharp and Clear */
+        .food-card video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            filter: none;
+            -webkit-filter: none;
+            image-rendering: crisp-edges;
+            image-rendering: -webkit-optimize-contrast;
+            -webkit-image-rendering: crisp-edges;
+            z-index: 1;
+        }
+
+        /* Dark overlay for better text visibility */
+        .food-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(0deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.1) 100%);
+            pointer-events: none;
+            z-index: 2;
+            border-radius: 40px;
+        }
+
+        /* Card Content - Inside card */
+        .card-content {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 20px 20px 20px;
+            background: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 70%, transparent 100%);
+            border-bottom-left-radius: 40px;
+            border-bottom-right-radius: 40px;
+            pointer-events: none;
+        }
+
+        .food-card.center-card .card-content {
+            pointer-events: auto;
+        }
+
+        /* Login/Register Buttons */
+        .card-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            padding: 6px 14px;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 400;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: 30px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            min-width: 65px;
+            backdrop-filter: none;
+            box-shadow: none;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.5);
+            color: white;
+        }
+
+        .btn:active {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Card Counter - Inside */
+        .card-counter {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.75rem;
+            letter-spacing: 1.5px;
+            font-weight: 300;
+            background: transparent;
+            padding: 4px 12px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            min-width: 60px;
+            text-align: center;
+            backdrop-filter: none;
+            margin-bottom: 8px;
+        }
+
+        /* Corner accent - Top right */
+        .card-accent {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 24px;
+            height: 24px;
+            border-top: 2px solid rgba(255,255,255,0.25);
+            border-right: 2px solid rgba(255,255,255,0.25);
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        /* Center card */
+        .food-card.center-card {
+            opacity: 1 !important;
+            filter: blur(0) !important;
+            transform: translate3d(0,0,30px) scale(1) !important;
+            box-shadow: 0 30px 50px rgba(0,0,0,0.8), 0 0 0 2px rgba(255,255,255,0.2) !important;
+            border-color: rgba(255,255,255,0.3) !important;
+            z-index: 100 !important;
+            margin: 0 !important;
+        }
+
+        /* Adjacent cards */
+        .food-card.adjacent-left {
+            opacity: 0.6 !important;
+            filter: blur(1.5px) !important;
+            transform: translate3d(15px,0,0) scale(0.9) rotateY(2deg) !important;
+            z-index: 50 !important;
+        }
+
+        .food-card.adjacent-right {
+            opacity: 0.6 !important;
+            filter: blur(1.5px) !important;
+            transform: translate3d(-15px,0,0) scale(0.9) rotateY(-2deg) !important;
+            z-index: 50 !important;
+        }
+
+        /* Far cards */
+        .food-card.far-left {
+            opacity: 0.2 !important;
+            filter: blur(3px) !important;
+            transform: translate3d(40px,0,-20px) scale(0.7) rotateY(4deg) !important;
+            z-index: 10 !important;
+        }
+
+        .food-card.far-right {
+            opacity: 0.2 !important;
+            filter: blur(3px) !important;
+            transform: translate3d(-40px,0,-20px) scale(0.7) rotateY(-4deg) !important;
+            z-index: 10 !important;
+        }
+
+        /* ===== OUTSIDE CONTROLS ===== */
+        .outside-controls {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 0 20px 0; /* 4px gap from card */
+            background: transparent;
+            z-index: 1000;
+        }
+
+        /* Dots Container - Outside */
+        .outside-dots {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 4px; /* 4px gap between dots and arrows */
+        }
+
+        .outside-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .outside-dot:hover {
+            background: rgba(255, 255, 255, 0.5);
+            transform: scale(1.2);
+        }
+
+        .outside-dot.active {
+            width: 24px;
+            background: white;
+            border-radius: 10px;
+        }
+
+        /* Arrows Container - Outside */
+        .outside-arrows {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .outside-arrow {
+            width: 44px;
+            height: 44px;
+            background: transparent;
+            border: 1.5px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: none;
+        }
+
+        .outside-arrow:hover {
+            border-color: rgba(255, 255, 255, 0.5);
+            color: white;
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .outside-arrow:active {
+            transform: scale(0.95);
+        }
+
+        /* Counter - Outside (optional - can be inside or outside) */
+        .outside-counter {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            font-weight: 400;
+            background: transparent;
+            padding: 6px 16px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-width: 70px;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        /* Hide old scroll dots inside card */
+        .scroll-dots {
+            display: none;
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 768px) {
+            .horizontal-scroll-container {
+                padding: 0 calc(50% - 150px);
+            }
+            
+            .food-card {
+                min-width: 300px;
+                width: 300px;
+                height: 500px;
+                border-radius: 40px;
+                margin: 0 -15px;
+            }
+            
+            .btn {
+                padding: 5px 12px;
+                font-size: 0.65rem;
+                min-width: 60px;
+            }
+            
+            .outside-arrow {
+                width: 40px;
+                height: 40px;
+                font-size: 1.3rem;
+            }
+            
+            .outside-dot {
+                width: 5px;
+                height: 5px;
+            }
+            
+            .outside-dot.active {
+                width: 20px;
+            }
+        }
+
+        /* Small height screens */
+        @media (max-height: 600px) {
+            .food-card {
+                height: 450px;
+            }
+            
+            .card-content {
+                padding: 20px 15px;
+            }
+            
+            .btn {
+                padding: 4px 10px;
+                font-size: 0.6rem;
+            }
+            
+            .outside-controls {
+                padding: 4px 0 15px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="stack-container">
+        <!-- Main Card Area -->
+        <div class="card-area">
+            <!-- Scroll Container -->
+            <div class="horizontal-scroll-container" id="scrollContainer">
+                <!-- 15 CARDS - All controls inside -->
+                <div class="food-card" data-index="0">
+                    <video src="videos/video1.mp4" loop muted playsinline preload="auto"></video>
+                    <div class="card-accent"></div>
+                    
+                    <!-- Card Content - Inside -->
+                    <div class="card-content">
+                        <!-- Login/Register Buttons -->
+                        <div class="card-buttons">
+                            <button class="btn" onclick="event.stopPropagation(); alert('Login 1')">LOGIN</button>
+                            <button class="btn" onclick="event.stopPropagation(); alert('Register 1')">REGISTER</button>
+                        </div>
+                        
+                        <!-- Counter Inside Card -->
+                        <div class="card-counter" id="cardCounter0">1/15</div>
+                    </div>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="food-card" data-index="1">
+                    <video src="videos/video2.mp4" loop muted playsinline preload="auto"></video>
+                    <div class="card-accent"></div>
+                    <div class="card-content">
+                        <div class="card-buttons">
+                            <button class="btn" onclick="event.stopPropagation(); alert('Login 2')">LOGIN</button>
+                            <button class="btn" onclick="event.stopPropagation(); alert('Register 2')">REGISTER</button>
+                        </div>
+                        <div class="card-counter" id="cardCounter1">2/15</div>
+                    </div>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="food-card" data-index="2">
+                    <video src="videos/video3.mp4" loop muted playsinline preload="auto"></video>
+                    <div class="card-accent"></div>
+                    <div class="card-content">
+                        <div class="card-buttons">
+                            <button class="btn" onclick="event.stopPropagation(); alert('Login 3')">LOGIN</button>
+                            <button class="btn" onclick="event.stopPropagation(); alert('Register 3')">REGISTER</button>
+                        </div>
+                        <div class="card-counter" id="cardCounter2">3/15</div>
+                    </div>
+                </div>
+
+                <!-- Card 4 -->
+                <div class="food-card" data-index="3">
+                    <video src="videos/video4.mp4" loop muted playsinline preload="auto"></video>
+                    <div class="card-accent"></div>
+                    <div class="card-content">
+                        <div class="card-buttons">
+                            <button class="btn" onclick="event.stopPropagation(); alert('Login 4')">LOGIN</button>
+                            <button class="btn" onclick="event.stopPropagation(); alert('Register 4')">REGISTER</button>
+                        </div>
+                        <div class="card-counter">4/15</div>
+                    </div>
+                </div>
+
+                <!-- Card 5 -->
+                <div class="food-card" data-index="4">
+                    <video src="videos/video5.mp4" loop muted playsinline preload="auto"></video>
+                    <div class="card-accent"></div>
+                    <div class="card-content">
+                        <div class="card-buttons">
+                            <button class="btn" onclick="event.stopPropagation(); alert('Login 5')">LOGIN</button>
+                            <button class="btn" onclick="event.stopPropagation(); alert('Register 5')">REGISTER</button>
+                        </div>
+                        <div class="card-counter">5/15</div>
+                    </div>
+                </div>
+
+                <!-- Card 6 -->
+                <div class="food-card" data-index="5">
+                    <video src="videos/video6.mp4" loop muted playsinline preload="auto"></video>
+                    <div class="card-accent"></div>
+                    <div class="card-content">
+                        <div class="card-buttons">
+                            <button class="btn" onclick="event.stopPropagation(); alert('Login 6')">LOGIN</button>
+                            <button class="btn" onclick="event.stopPropagation(); alert('Register 6')">REGISTER</button>
+                        </div>
+                        <div class="card-counter">6/15</div>
+                    </div>
+                </div>
+
+                <!-- Card 7 -->
+                <div class="food-card" data-index="6">
+                    <video src="videos/video7.mp4" loop muted playsinline preload="auto"></video>
+                    <div class="card-accent"></div>
+                    <div class="card-content">
+                        <div class="card-buttons">
+                            <button class="btn" onclick="event.stopPropagation(); alert('Login 7')">LOGIN</button>
+                            <button class="btn" onclick="event.stopPropagation(); alert('Register 7')">REGISTER</button>
+                        </div>
+                        <div class="card-counter">7/15</div>
+                    </div>
+                </div>
+
+                <!-- Card 8 -->
+                <div class="food-card" data-index="7">
+                    <video src="videos/video8.mp4" loop muted playsinline preload="auto"></video>
+                    <div class="card-accent"></div>
+                    <div class="card-content">
+                        <div class="card-buttons">
+                            <button class="btn" onclick="event.stopPropagation(); alert('Login 8')">LOGIN</button>
+                            <button class="btn" onclick="event.stopPropagation(); alert('Register 8')">REGISTER</button>
+                        </div>
+                        <div class="card-counter">8/15</div>
+                    </div>
+                </div>
+
+                <!-- Card 9 -->
+                <div class="food-card" data-index="8">
+                    <video src="videos/video9.mp4" loop muted playsinline preload="auto"></video>
+                    <div class="card-accent"></div>
+                    <div class="card-content">
+                        <div class="card-buttons">
+                            <button class="btn" onclick="event.stopPropagation(); alert('Login 9')">LOGIN</button>
+                            <button class="btn" onclick="event.stopPropagation(); alert('Register 9')">REGISTER</button>
+                        </div>
+                        <div class="card-counter">9/15</div>
+                    </div>
+                </div>
+
+                <!-- Card 10 -->
+                <div class="food-card" data-index="9">
+                    <video src="videos/video10.mp4" loop muted playsinline preload="auto"></video>
+                    <div class="card-accent"></div>
+                    <div class="card-content">
+                        <div class="card-buttons">
+                            <button class="btn" onclick="event.stopPropagation(); alert('Login 10')">LOGIN</button>
+                            <button class="btn" onclick="event.stopPropagation(); alert('Register 10')">REGISTER</button>
+                        </div>
+                        <div class="card-counter">10/15</div>
+                    </div>
+                </div>
+
+                <!-- Card 11 -->
+                <div class="food-card" data-index="10">
+                    <video src="videos/video11.mp4" loop muted playsinline preload="auto"></video>
+                    <div class="card-accent"></div>
+                    <div class="card-content">
+                        <div class="card-buttons">
+                            <button class="btn" onclick="event.stopPropagation(); alert('Login 11')">LOGIN</button>
+                            <button class="btn" onclick="event.stopPropagation(); alert('Register 11')">REGISTER</button>
+                        </div>
+                        <div class="card-counter">11/15</div>
+                    </div>
+                </div>
+
+                <!-- Card 12 -->
+                <div class="food-card" data-index="11">
+                    <video src="videos/video12.mp4" loop muted playsinline preload="auto"></video>
+                    <div class="card-accent"></div>
+                    <div class="card-content">
+                        <div class="card-buttons">
+                            <button class="btn" onclick="event.stopPropagation(); alert('Login 12')">LOGIN</button>
+                            <button class="btn" onclick="event.stopPropagation(); alert('Register 12')">REGISTER</button>
+                        </div>
+                        <div class="card-counter">12/15</div>
+                    </div>
+                </div>
+
+                <!-- Card 13 -->
+                <div class="food-card" data-index="12">
+                    <video src="videos/video13.mp4" loop muted playsinline preload="auto"></video>
+                    <div class="card-accent"></div>
+                    <div class="card-content">
+                        <div class="card-buttons">
+                            <button class="btn" onclick="event.stopPropagation(); alert('Login 13')">LOGIN</button>
+                            <button class="btn" onclick="event.stopPropagation(); alert('Register 13')">REGISTER</button>
+                        </div>
+                        <div class="card-counter">13/15</div>
+                    </div>
+                </div>
+
+                <!-- Card 14 -->
+                <div class="food-card" data-index="13">
+                    <video src="videos/video14.mp4" loop muted playsinline preload="auto"></video>
+                    <div class="card-accent"></div>
+                    <div class="card-content">
+                        <div class="card-buttons">
+                            <button class="btn" onclick="event.stopPropagation(); alert('Login 14')">LOGIN</button>
+                            <button class="btn" onclick="event.stopPropagation(); alert('Register 14')">REGISTER</button>
+                        </div>
+                        <div class="card-counter">14/15</div>
+                    </div>
+                </div>
+
+                <!-- Card 15 -->
+                <div class="food-card" data-index="14">
+                    <video src="videos/video15.mp4" loop muted playsinline preload="auto"></video>
+                    <div class="card-accent"></div>
+                    <div class="card-content">
+                        <div class="card-buttons">
+                            <button class="btn" onclick="event.stopPropagation(); alert('Login 15')">LOGIN</button>
+                            <button class="btn" onclick="event.stopPropagation(); alert('Register 15')">REGISTER</button>
+                        </div>
+                        <div class="card-counter">15/15</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Outside Controls - 4px gap from card -->
+        <div class="outside-controls">
+            <!-- Dots Outside -->
+            <div class="outside-dots" id="outsideDots"></div>
+            
+            <!-- Arrows Outside -->
+            <div class="outside-arrows">
+                <button class="outside-arrow" onclick="manualMove('prev')" aria-label="Previous card">←</button>
+                <button class="outside-arrow" onclick="manualMove('next')" aria-label="Next card">→</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // DOM elements
+            const container = document.getElementById('scrollContainer');
+            if (!container) return;
+            
+            let cards = document.querySelectorAll('.food-card');
+            if (!cards.length) return;
+            
+            const outsideDots = document.getElementById('outsideDots');
+            
+            // Convert to array
+            cards = Array.from(cards);
+            
+            // State
+            let currentIndex = 0;
+            let isMoving = false;
+            let moveLocked = false;
+            let touchStartX = 0;
+            let touchStartTime = 0;
+            let lastMoveTime = 0;
+            let pendingMove = null;
+            
+            // Total cards
+            const totalCards = cards.length;
+            
+            // Cooldown periods
+            const MOVE_COOLDOWN = 600;
+            const ANIMATION_DURATION = 400;
+            
+            // Create outside dots
+            if (outsideDots) {
+                for (let i = 0; i < totalCards; i++) {
+                    const dot = document.createElement('span');
+                    dot.className = 'outside-dot';
+                    dot.dataset.index = i;
+                    dot.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (!moveLocked && !isMoving) {
+                            moveToIndex(i);
+                        }
+                    });
+                    outsideDots.appendChild(dot);
+                }
+            }
+            
+            const dots = document.querySelectorAll('.outside-dot');
+            
+            // Update all cards' UI
+            function updateAllCards(index) {
+                if (!cards || !cards.length) return;
+                
+                index = (index + totalCards) % totalCards;
+                currentIndex = index;
+                
+                requestAnimationFrame(() => {
+                    // Update card classes
+                    cards.forEach((card, i) => {
+                        if (!card) return;
+                        
+                        card.classList.remove(
+                            'center-card', 'adjacent-left', 'adjacent-right',
+                            'far-left', 'far-right'
+                        );
+                        
+                        if (i === index) {
+                            card.classList.add('center-card');
+                        } else {
+                            const dist = (i - index + totalCards) % totalCards;
+                            
+                            if (dist === 1) {
+                                card.classList.add('adjacent-right');
+                            } else if (dist === totalCards - 1) {
+                                card.classList.add('adjacent-left');
+                            } else if (dist < totalCards / 2) {
+                                card.classList.add('far-right');
+                            } else {
+                                card.classList.add('far-left');
+                            }
+                        }
+                    });
+                    
+                    // Update counters inside cards
+                    cards.forEach((card, i) => {
+                        const counter = card.querySelector('.card-counter');
+                        if (counter) {
+                            counter.textContent = `${i + 1}/${totalCards}`;
+                        }
+                    });
+                    
+                    // Update outside dots
+                    dots.forEach((dot, i) => {
+                        if (i === index) {
+                            dot.classList.add('active');
+                        } else {
+                            dot.classList.remove('active');
+                        }
+                    });
+                });
+            }
+            
+            // Scroll to card
+            function scrollToCard(index) {
+                if (!cards || !cards.length || !container) return;
+                
+                const targetCard = cards[index];
+                if (!targetCard) return;
+                
+                try {
+                    targetCard.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'nearest',
+                        inline: 'center'
+                    });
+                } catch (e) {
+                    container.scrollLeft = targetCard.offsetLeft - container.offsetWidth / 2 + targetCard.offsetWidth / 2;
+                }
+            }
+            
+            // Move to index
+            function moveToIndex(index) {
+                if (moveLocked || isMoving) {
+                    pendingMove = index;
+                    return;
+                }
+                
+                const now = Date.now();
+                if (now - lastMoveTime < MOVE_COOLDOWN) return;
+                
+                index = (index + totalCards) % totalCards;
+                if (index === currentIndex) return;
+                
+                moveLocked = true;
+                isMoving = true;
+                lastMoveTime = now;
+                pendingMove = null;
+                
+                updateAllCards(index);
+                scrollToCard(index);
+                
+                setTimeout(() => {
+                    isMoving = false;
+                    
+                    setTimeout(() => {
+                        moveLocked = false;
+                        
+                        if (pendingMove !== null && pendingMove !== currentIndex) {
+                            const nextMove = pendingMove;
+                            pendingMove = null;
+                            moveToIndex(nextMove);
+                        }
+                    }, 200);
+                }, ANIMATION_DURATION);
+            }
+            
+            // Manual move (called from outside arrows)
+            window.manualMove = function(direction) {
+                if (moveLocked || isMoving) return;
+                
+                if (direction === 'prev') {
+                    moveToIndex(currentIndex - 1);
+                } else {
+                    moveToIndex(currentIndex + 1);
+                }
+            };
+            
+            // Touch events
+            container.addEventListener('touchstart', (e) => {
+                if (moveLocked || isMoving) {
+                    e.preventDefault();
+                    return;
+                }
+                touchStartX = e.touches[0].clientX;
+                touchStartTime = Date.now();
+            }, { passive: false });
+            
+            container.addEventListener('touchmove', (e) => {
+                if (moveLocked || isMoving || touchStartX === 0) {
+                    e.preventDefault();
+                    return;
+                }
+                e.preventDefault();
+            }, { passive: false });
+            
+            container.addEventListener('touchend', (e) => {
+                if (moveLocked || isMoving || touchStartX === 0) {
+                    touchStartX = 0;
+                    return;
+                }
+                
+                const touchEndX = e.changedTouches[0].clientX;
+                const diffX = touchEndX - touchStartX;
+                const diffTime = Date.now() - touchStartTime;
+                
+                if (Math.abs(diffX) > 30 && diffTime < 300) {
+                    if (diffX > 0) {
+                        moveToIndex(currentIndex - 1);
+                    } else {
+                        moveToIndex(currentIndex + 1);
+                    }
+                }
+                
+                touchStartX = 0;
+            }, { passive: true });
+            
+            // Keyboard
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    
+                    if (moveLocked || isMoving) return;
+                    
+                    if (e.key === 'ArrowLeft') {
+                        moveToIndex(currentIndex - 1);
+                    } else {
+                        moveToIndex(currentIndex + 1);
+                    }
+                }
+            });
+            
+            // Disable wheel
+            container.addEventListener('wheel', (e) => {
+                e.preventDefault();
+            }, { passive: false });
+            
+            // Scroll listener
+            let scrollTimeout;
+            container.addEventListener('scroll', () => {
+                if (!isMoving && !moveLocked) {
+                    if (scrollTimeout) {
+                        window.cancelAnimationFrame(scrollTimeout);
+                    }
+                    scrollTimeout = window.requestAnimationFrame(() => {
+                        const containerRect = container.getBoundingClientRect();
+                        const containerCenter = containerRect.left + containerRect.width / 2;
+                        
+                        let centerIndex = currentIndex;
+                        let minDistance = Infinity;
+                        
+                        cards.forEach((card, index) => {
+                            if (!card) return;
+                            const cardRect = card.getBoundingClientRect();
+                            const cardCenter = cardRect.left + cardRect.width / 2;
+                            const distance = Math.abs(cardCenter - containerCenter);
+                            
+                            if (distance < minDistance) {
+                                minDistance = distance;
+                                centerIndex = index;
+                            }
+                        });
+                        
+                        if (centerIndex !== currentIndex && !moveLocked && !isMoving) {
+                            updateAllCards(centerIndex);
+                        }
+                    });
+                }
+            }, { passive: true });
+            
+            // Initialize videos
+            cards.forEach((card) => {
+                const video = card.querySelector('video');
+                if (!video) return;
+                
+                video.addEventListener('error', () => {
+                    card.style.background = 'linear-gradient(135deg, #1a1a1a, #0a0a0a)';
+                });
+                
+                try { video.load(); } catch (e) {}
+                
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (!video) return;
+                        if (entry.isIntersecting) {
+                            try { video.play().catch(() => {}); } catch (e) {}
+                        } else {
+                            try { video.pause(); } catch (e) {}
+                        }
+                    });
+                }, { threshold: 0.5 });
+                
+                observer.observe(card);
+            });
+            
+            // Initialize
+            window.addEventListener('load', () => {
+                setTimeout(() => {
+                    try {
+                        if (cards[0] && container) {
+                            cards[0].scrollIntoView({
+                                behavior: 'auto',
+                                block: 'nearest',
+                                inline: 'center'
+                            });
+                            updateAllCards(0);
+                        }
+                        
+                        cards.forEach(card => {
+                            const video = card?.querySelector('video');
+                            if (video) {
+                                try { video.play().catch(() => {}); } catch (e) {}
+                            }
+                        });
+                    } catch (e) {}
+                }, 100);
+            });
+            
+            // Handle resize
+            let resizeTimeout;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(() => {
+                    try {
+                        if (cards[currentIndex] && container && !moveLocked) {
+                            cards[currentIndex].scrollIntoView({
+                                behavior: 'auto',
+                                block: 'nearest',
+                                inline: 'center'
+                            });
+                        }
+                    } catch (e) {}
+                }, 100);
+            });
+            
+        })();
+    </script>
+</body>
+</html>
