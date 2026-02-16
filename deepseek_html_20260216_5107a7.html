@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Stack Cards - Pro Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        html, body {
+            background-color: #0a0a0a;
+            overflow: hidden;
+            height: 100%;
+            width: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .stack-container {
+            position: fixed;
+            background: #0a0a0a;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        .horizontal-scroll-container {
+            display: flex;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-snap-type: x mandatory;
+            gap: 0;
+            padding: 0 calc(50% - 140px);
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            scroll-snap-stop: always;
+            transform: translate3d(0,0,0);
+            -webkit-transform: translate3d(0,0,0);
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            position: relative;
+        }
+
+        .horizontal-scroll-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Cards */
+        .food-card {
+            min-width: 280px;
+            width: 280px;
+            height: 420px;
+            background: rgba(15, 15, 15, 0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 30px;
+            overflow: hidden;
+            position: relative;
+            flex-shrink: 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 25px;
+            scroll-snap-align: center;
+            transform: translate3d(0,0,0);
+            -webkit-transform: translate3d(0,0,0);
+            transition: all 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
+            will-change: transform, opacity, filter;
+            margin: 0 -15px;
+            opacity: 0.2;
+            filter: blur(4px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* Videos with enhanced contrast and saturation */
+        .food-card video {
+            width: 100%;
+            height: 70%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            
+            /* Enhanced video quality */
+            filter: contrast(1.2) saturate(1.3) brightness(1.1);
+            -webkit-filter: contrast(1.2) saturate(1.3) brightness(1.1);
+            
+            /* Extra pop for center card */
+            transition: filter 0.3s ease;
+        }
+
+        /* Even more enhanced for center card */
+        .food-card.center-card video {
+            filter: contrast(1.3) saturate(1.4) brightness(1.15);
+            -webkit-filter: contrast(1.3) saturate(1.4) brightness(1.15);
+        }
+
+        /* Subtle overlay to make videos pop more */
+        .food-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.2) 100%);
+            pointer-events: none;
+            z-index: 2;
+            border-radius: 30px;
+            mix-blend-mode: overlay;
+        }
+
+        /* Center card */
+        .food-card.center-card {
+            opacity: 1 !important;
+            filter: blur(0) !important;
+            transform: translate3d(0,0,30px) scale(1) !important;
+            box-shadow: 0 30px 50px rgba(0,0,0,0.8), 0 0 0 2px rgba(255,255,255,0.2) !important;
+            border-color: rgba(255,255,255,0.3) !important;
+            z-index: 100 !important;
+            margin: 0 !important;
+        }
+
+        /* Adjacent cards */
+        .food-card.adjacent-left {
+            opacity: 0.6 !important;
+            filter: blur(1.5px) !important;
+            transform: translate3d(15px,0,0) scale(0.9) rotateY(2deg) !important;
+            z-index: 50 !important;
+        }
+
+        .food-card.adjacent-right {
+            opacity: 0.6 !important;
+            filter: blur(1.5px) !important;
+            transform: translate3d(-15px,0,0) scale(0.9) rotateY(-2deg) !important;
+            z-index: 50 !important;
+        }
+
+        /* Far cards */
+        .food-card.far-left {
+            opacity: 0.2 !important;
+            filter: blur(3px) !important;
+            transform: translate3d(40px,0,-20px) scale(0.7) rotateY(4deg) !important;
+            z-index: 10 !important;
+        }
+
+        .food-card.far-right {
+            opacity: 0.2 !important;
+            filter: blur(3px) !important;
+            transform: translate3d(-40px,0,-20px) scale(0.7) rotateY(-4deg) !important;
+            z-index: 10 !important;
+        }
+
+        /* Bottom buttons - Smaller and professional */
+        .card-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            width: 100%;
+            opacity: 0;
+            transform: translateY(15px);
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .food-card.center-card .card-buttons {
+            opacity: 1;
+            transform: translateY(0);
+            transition-delay: 0.2s;
+            pointer-events: auto;
+        }
+
+        /* Professional small buttons */
+        .btn {
+            padding: 8px 16px;
+            background: rgba(20, 20, 20, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: 20px;
+            backdrop-filter: blur(8px);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            min-width: 70px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            font-family: 'Inter', -apple-system, sans-serif;
+            line-height: 1.2;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Corner accent - subtle */
+        .card-accent {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 24px;
+            height: 24px;
+            border-top: 2px solid rgba(255,255,255,0.1);
+            border-right: 2px solid rgba(255,255,255,0.1);
+            z-index: 5;
+        }
+
+        .food-card.center-card .card-accent {
+            border-top: 2px solid rgba(255,255,255,0.25);
+            border-right: 2px solid rgba(255,255,255,0.25);
+        }
+
+        /* Navigation arrows */
+        .nav-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 44px;
+            height: 44px;
+            background: rgba(20,20,20,0.6);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255,255,255,0.7);
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(8px);
+            opacity: 0.6;
+        }
+
+        .nav-arrow:hover {
+            opacity: 1;
+            background: rgba(40,40,40,0.8);
+            border-color: rgba(255,255,255,0.3);
+            transform: translateY(-50%) scale(1.05);
+            color: white;
+        }
+
+        .nav-arrow:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+
+        .nav-left {
+            left: 20px;
+        }
+
+        .nav-right {
+            right: 20px;
+        }
+
+        /* Scroll indicator */
+        .scroll-dots {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 1000;
+            background: rgba(20,20,20,0.4);
+            padding: 6px 12px;
+            border-radius: 30px;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .dot:hover {
+            background: rgba(255,255,255,0.6);
+            transform: scale(1.2);
+        }
+
+        .dot.active {
+            width: 24px;
+            background: white;
+            border-radius: 10px;
+        }
+
+        /* Card counter */
+        .card-counter {
+            position: absolute;
+            bottom: 25px;
+            right: 25px;
+            color: rgba(255,255,255,0.4);
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            z-index: 1000;
+            background: rgba(20,20,20,0.4);
+            padding: 6px 14px;
+            border-radius: 30px;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.1);
+            font-weight: 400;
+        }
+
+        /* Auto scroll indicator */
+        .auto-scroll-indicator {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%) translateY(35px);
+            color: rgba(255,255,255,0.3);
+            font-size: 0.7rem;
+            letter-spacing: 1px;
+            z-index: 1000;
+            background: rgba(20,20,20,0.3);
+            padding: 4px 10px;
+            border-radius: 20px;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.1);
+            white-space: nowrap;
+            font-weight: 400;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .food-card {
+                min-width: 210px;
+                width: 210px;
+                height: 315px;
+                padding: 20px;
+            }
+
+            .horizontal-scroll-container {
+                padding: 0 calc(50% - 105px);
+            }
+
+            .btn {
+                padding: 6px 12px;
+                font-size: 0.7rem;
+                min-width: 60px;
+                letter-spacing: 0.5px;
+            }
+
+            .nav-arrow {
+                width: 38px;
+                height: 38px;
+                font-size: 1.3rem;
+            }
+
+            .card-counter {
+                bottom: 20px;
+                right: 20px;
+                font-size: 0.7rem;
+                padding: 4px 10px;
+            }
+
+            .scroll-dots {
+                bottom: 20px;
+                padding: 5px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="stack-container">
+        <!-- Navigation Arrows -->
+        <button class="nav-arrow nav-left" onclick="manualMove('prev')">←</button>
+        <button class="nav-arrow nav-right" onclick="manualMove('next')">→</button>
+
+        <!-- Scroll Container -->
+        <div class="horizontal-scroll-container" id="scrollContainer">
+            <!-- 15 CARDS -->
+            <div class="food-card" data-index="0">
+                <video src="videos/video1.mp4" loop muted playsinline preload="auto"></video>
+                <div class="card-accent"></div>
+                <div class="card-buttons">
+                    <button class="btn" onclick="event.stopPropagation(); alert('Login')">LOGIN</button>
+                    <button class="btn" onclick="event.stopPropagation(); alert('Register')">REGISTER</button>
+                </div>
+            </div>
+            <div class="food-card" data-index="1">
+                <video src="videos/video2.mp4" loop muted playsinline preload="auto"></video>
+                <div class="card-accent"></div>
+                <div class="card-buttons">
+                    <button class="btn" onclick="event.stopPropagation(); alert('Login')">LOGIN</button>
+                    <button class="btn" onclick="event.stopPropagation(); alert('Register')">REGISTER</button>
+                </div>
+            </div>
+            <div class="food-card" data-index="2">
+                <video src="videos/video3.mp4" loop muted playsinline preload="auto"></video>
+                <div class="card-accent"></div>
+                <div class="card-buttons">
+                    <button class="btn" onclick="event.stopPropagation(); alert('Login')">LOGIN</button>
+                    <button class="btn" onclick="event.stopPropagation(); alert('Register')">REGISTER</button>
+                </div>
+            </div>
+            <div class="food-card" data-index="3">
+                <video src="videos/video4.mp4" loop muted playsinline preload="auto"></video>
+                <div class="card-accent"></div>
+                <div class="card-buttons">
+                    <button class="btn" onclick="event.stopPropagation(); alert('Login')">LOGIN</button>
+                    <button class="btn" onclick="event.stopPropagation(); alert('Register')">REGISTER</button>
+                </div>
+            </div>
+            <div class="food-card" data-index="4">
+                <video src="videos/video5.mp4" loop muted playsinline preload="auto"></video>
+                <div class="card-accent"></div>
+                <div class="card-buttons">
+                    <button class="btn" onclick="event.stopPropagation(); alert('Login')">LOGIN</button>
+                    <button class="btn" onclick="event.stopPropagation(); alert('Register')">REGISTER</button>
+                </div>
+            </div>
+            <div class="food-card" data-index="5">
+                <video src="videos/video6.mp4" loop muted playsinline preload="auto"></video>
+                <div class="card-accent"></div>
+                <div class="card-buttons">
+                    <button class="btn" onclick="event.stopPropagation(); alert('Login')">LOGIN</button>
+                    <button class="btn" onclick="event.stopPropagation(); alert('Register')">REGISTER</button>
+                </div>
+            </div>
+            <div class="food-card" data-index="6">
+                <video src="videos/video7.mp4" loop muted playsinline preload="auto"></video>
+                <div class="card-accent"></div>
+                <div class="card-buttons">
+                    <button class="btn" onclick="event.stopPropagation(); alert('Login')">LOGIN</button>
+                    <button class="btn" onclick="event.stopPropagation(); alert('Register')">REGISTER</button>
+                </div>
+            </div>
+            <div class="food-card" data-index="7">
+                <video src="videos/video8.mp4" loop muted playsinline preload="auto"></video>
+                <div class="card-accent"></div>
+                <div class="card-buttons">
+                    <button class="btn" onclick="event.stopPropagation(); alert('Login')">LOGIN</button>
+                    <button class="btn" onclick="event.stopPropagation(); alert('Register')">REGISTER</button>
+                </div>
+            </div>
+            <div class="food-card" data-index="8">
+                <video src="videos/video9.mp4" loop muted playsinline preload="auto"></video>
+                <div class="card-accent"></div>
+                <div class="card-buttons">
+                    <button class="btn" onclick="event.stopPropagation(); alert('Login')">LOGIN</button>
+                    <button class="btn" onclick="event.stopPropagation(); alert('Register')">REGISTER</button>
+                </div>
+            </div>
+            <div class="food-card" data-index="9">
+                <video src="videos/video10.mp4" loop muted playsinline preload="auto"></video>
+                <div class="card-accent"></div>
+                <div class="card-buttons">
+                    <button class="btn" onclick="event.stopPropagation(); alert('Login')">LOGIN</button>
+                    <button class="btn" onclick="event.stopPropagation(); alert('Register')">REGISTER</button>
+                </div>
+            </div>
+            <div class="food-card" data-index="10">
+                <video src="videos/video11.mp4" loop muted playsinline preload="auto"></video>
+                <div class="card-accent"></div>
+                <div class="card-buttons">
+                    <button class="btn" onclick="event.stopPropagation(); alert('Login')">LOGIN</button>
+                    <button class="btn" onclick="event.stopPropagation(); alert('Register')">REGISTER</button>
+                </div>
+            </div>
+            <div class="food-card" data-index="11">
+                <video src="videos/video12.mp4" loop muted playsinline preload="auto"></video>
+                <div class="card-accent"></div>
+                <div class="card-buttons">
+                    <button class="btn" onclick="event.stopPropagation(); alert('Login')">LOGIN</button>
+                    <button class="btn" onclick="event.stopPropagation(); alert('Register')">REGISTER</button>
+                </div>
+            </div>
+            <div class="food-card" data-index="12">
+                <video src="videos/video13.mp4" loop muted playsinline preload="auto"></video>
+                <div class="card-accent"></div>
+                <div class="card-buttons">
+                    <button class="btn" onclick="event.stopPropagation(); alert('Login')">LOGIN</button>
+                    <button class="btn" onclick="event.stopPropagation(); alert('Register')">REGISTER</button>
+                </div>
+            </div>
+            <div class="food-card" data-index="13">
+                <video src="videos/video14.mp4" loop muted playsinline preload="auto"></video>
+                <div class="card-accent"></div>
+                <div class="card-buttons">
+                    <button class="btn" onclick="event.stopPropagation(); alert('Login')">LOGIN</button>
+                    <button class="btn" onclick="event.stopPropagation(); alert('Register')">REGISTER</button>
+                </div>
+            </div>
+            <div class="food-card" data-index="14">
+                <video src="videos/video15.mp4" loop muted playsinline preload="auto"></video>
+                <div class="card-accent"></div>
+                <div class="card-buttons">
+                    <button class="btn" onclick="event.stopPropagation(); alert('Login')">LOGIN</button>
+                    <button class="btn" onclick="event.stopPropagation(); alert('Register')">REGISTER</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scroll indicator -->
+        <div class="scroll-dots" id="scrollDots"></div>
+        
+        <!-- Card counter -->
+        <div class="card-counter" id="cardCounter">1 / 15</div>
+        
+        <!-- Auto scroll indicator -->
+        <div class="auto-scroll-indicator" id="autoScrollIndicator">▶ 5s</div>
+    </div>
+
+    <script>
+        (function() {
+            // DOM elements
+            const container = document.getElementById('scrollContainer');
+            if (!container) return;
+            
+            let cards = document.querySelectorAll('.food-card');
+            if (!cards.length) return;
+            
+            const dotsContainer = document.getElementById('scrollDots');
+            const counter = document.getElementById('cardCounter');
+            const autoIndicator = document.getElementById('autoScrollIndicator');
+            
+            // Convert to array
+            cards = Array.from(cards);
+            
+            // State
+            let currentIndex = 0;
+            let isMoving = false;
+            let autoScrollEnabled = true;
+            let autoScrollTimer = null;
+            let countdownTimer = null;
+            let countdownSeconds = 5;
+            let touchStartX = 0;
+            let lastMoveTime = 0;
+            
+            // Total cards
+            const totalCards = cards.length;
+            
+            // Create dots
+            if (dotsContainer) {
+                cards.forEach((_, index) => {
+                    const dot = document.createElement('span');
+                    dot.className = 'dot';
+                    dot.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        stopAutoScroll();
+                        moveToIndex(index);
+                        startAutoScrollAfterDelay();
+                    });
+                    dotsContainer.appendChild(dot);
+                });
+            }
+            
+            const dots = document.querySelectorAll('.dot');
+            
+            // Update countdown display
+            function updateCountdown(seconds) {
+                if (autoIndicator) {
+                    autoIndicator.textContent = `▶ ${seconds}s`;
+                }
+            }
+            
+            // Stop auto scroll
+            function stopAutoScroll() {
+                autoScrollEnabled = false;
+                if (autoScrollTimer) {
+                    clearTimeout(autoScrollTimer);
+                    autoScrollTimer = null;
+                }
+                if (countdownTimer) {
+                    clearInterval(countdownTimer);
+                    countdownTimer = null;
+                }
+                if (autoIndicator) {
+                    autoIndicator.style.opacity = '0.3';
+                    updateCountdown(5);
+                }
+            }
+            
+            // Start auto scroll
+            function startAutoScroll() {
+                if (!autoScrollEnabled) return;
+                
+                // Clear existing timers
+                if (autoScrollTimer) {
+                    clearTimeout(autoScrollTimer);
+                    autoScrollTimer = null;
+                }
+                if (countdownTimer) {
+                    clearInterval(countdownTimer);
+                    countdownTimer = null;
+                }
+                
+                // Reset countdown
+                let remaining = 5;
+                updateCountdown(remaining);
+                if (autoIndicator) {
+                    autoIndicator.style.opacity = '0.7';
+                }
+                
+                // Start countdown
+                countdownTimer = setInterval(() => {
+                    remaining--;
+                    if (remaining >= 0) {
+                        updateCountdown(remaining);
+                    }
+                }, 1000);
+                
+                // Set scroll timer
+                autoScrollTimer = setTimeout(() => {
+                    if (autoScrollEnabled && !isMoving) {
+                        // Move to next card
+                        const nextIndex = (currentIndex + 1) % totalCards;
+                        moveToIndex(nextIndex);
+                        
+                        // Continue auto scroll
+                        autoScrollTimer = setTimeout(() => {
+                            startAutoScroll();
+                        }, 100);
+                    }
+                }, 5000);
+            }
+            
+            // Start auto scroll after delay
+            function startAutoScrollAfterDelay() {
+                setTimeout(() => {
+                    autoScrollEnabled = true;
+                    startAutoScroll();
+                }, 1000);
+            }
+            
+            // Safe index calculation
+            function getSafeIndex(index) {
+                if (index < 0) return totalCards - 1;
+                if (index >= totalCards) return 0;
+                return index;
+            }
+            
+            // Update card classes
+            function updateCards(index) {
+                if (!cards || !cards.length) return;
+                
+                index = getSafeIndex(index);
+                currentIndex = index;
+                
+                requestAnimationFrame(() => {
+                    cards.forEach((card, i) => {
+                        if (!card) return;
+                        
+                        card.classList.remove(
+                            'center-card', 'adjacent-left', 'adjacent-right',
+                            'far-left', 'far-right'
+                        );
+                        
+                        if (i === index) {
+                            card.classList.add('center-card');
+                        } else {
+                            const dist = (i - index + totalCards) % totalCards;
+                            
+                            if (dist === 1) {
+                                card.classList.add('adjacent-right');
+                            } else if (dist === totalCards - 1) {
+                                card.classList.add('adjacent-left');
+                            } else if (dist < totalCards / 2) {
+                                card.classList.add('far-right');
+                            } else {
+                                card.classList.add('far-left');
+                            }
+                        }
+                    });
+                    
+                    // Update dots
+                    if (dots && dots.length) {
+                        dots.forEach((dot, i) => {
+                            if (dot) {
+                                if (i === index) {
+                                    dot.classList.add('active');
+                                } else {
+                                    dot.classList.remove('active');
+                                }
+                            }
+                        });
+                    }
+                    
+                    // Update counter
+                    if (counter) {
+                        counter.textContent = `${index + 1} / ${totalCards}`;
+                    }
+                });
+            }
+            
+            // Scroll to card
+            function scrollToCard(index) {
+                if (!cards || !cards.length || !container) return;
+                
+                const targetCard = cards[index];
+                if (!targetCard) return;
+                
+                try {
+                    targetCard.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'nearest',
+                        inline: 'center'
+                    });
+                } catch (e) {
+                    container.scrollLeft = targetCard.offsetLeft - container.offsetWidth / 2 + targetCard.offsetWidth / 2;
+                }
+            }
+            
+            // Move to index
+            function moveToIndex(index) {
+                if (isMoving) return;
+                
+                const now = Date.now();
+                if (now - lastMoveTime < 500) return;
+                
+                stopAutoScroll();
+                
+                index = getSafeIndex(index);
+                
+                if (index === currentIndex) return;
+                
+                isMoving = true;
+                lastMoveTime = now;
+                
+                updateCards(index);
+                scrollToCard(index);
+                
+                setTimeout(() => {
+                    isMoving = false;
+                }, 400);
+            }
+            
+            // Manual move
+            function manualMove(direction) {
+                if (isMoving) return;
+                
+                stopAutoScroll();
+                
+                if (direction === 'prev') {
+                    moveToIndex(currentIndex - 1);
+                } else {
+                    moveToIndex(currentIndex + 1);
+                }
+                
+                startAutoScrollAfterDelay();
+            }
+            
+            // Get center card index
+            function getCenterCardIndex() {
+                if (!container || !cards || !cards.length) return currentIndex;
+                
+                try {
+                    const containerRect = container.getBoundingClientRect();
+                    const containerCenter = containerRect.left + containerRect.width / 2;
+                    
+                    let minDistance = Infinity;
+                    let centerIndex = currentIndex;
+                    
+                    cards.forEach((card, index) => {
+                        if (!card) return;
+                        const cardRect = card.getBoundingClientRect();
+                        const cardCenter = cardRect.left + cardRect.width / 2;
+                        const distance = Math.abs(cardCenter - containerCenter);
+                        
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            centerIndex = index;
+                        }
+                    });
+                    
+                    return centerIndex;
+                } catch (e) {
+                    return currentIndex;
+                }
+            }
+            
+            // Expose manual move globally
+            window.manualMove = manualMove;
+            
+            // Touch events
+            container.addEventListener('touchstart', (e) => {
+                touchStartX = e.touches[0].clientX;
+                stopAutoScroll();
+            }, { passive: true });
+            
+            container.addEventListener('touchmove', (e) => {
+                if (touchStartX === 0) return;
+                e.preventDefault();
+            }, { passive: false });
+            
+            container.addEventListener('touchend', (e) => {
+                if (touchStartX === 0) return;
+                
+                const touchEndX = e.changedTouches[0].clientX;
+                const diffX = touchEndX - touchStartX;
+                
+                if (Math.abs(diffX) > 30 && !isMoving) {
+                    if (diffX > 0) {
+                        manualMove('prev');
+                    } else {
+                        manualMove('next');
+                    }
+                } else {
+                    startAutoScrollAfterDelay();
+                }
+                
+                touchStartX = 0;
+            }, { passive: true });
+            
+            // Keyboard
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    
+                    if (isMoving) return;
+                    
+                    if (e.key === 'ArrowLeft') {
+                        manualMove('prev');
+                    } else {
+                        manualMove('next');
+                    }
+                }
+            });
+            
+            // Scroll listener
+            container.addEventListener('scroll', () => {
+                if (!isMoving) {
+                    const centerIndex = getCenterCardIndex();
+                    if (centerIndex !== currentIndex) {
+                        updateCards(centerIndex);
+                    }
+                }
+            }, { passive: true });
+            
+            // Mouse enter/leave
+            container.addEventListener('mouseenter', stopAutoScroll);
+            container.addEventListener('mouseleave', startAutoScrollAfterDelay);
+            
+            // Initialize videos
+            cards.forEach((card) => {
+                const video = card.querySelector('video');
+                if (!video) return;
+                
+                video.addEventListener('error', () => {
+                    card.style.background = 'linear-gradient(135deg, #1a1a1a, #0a0a0a)';
+                    video.style.display = 'none';
+                });
+                
+                try {
+                    video.load();
+                } catch (e) {}
+                
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (!video) return;
+                        if (entry.isIntersecting) {
+                            try {
+                                video.play().catch(() => {});
+                            } catch (e) {}
+                        } else {
+                            try {
+                                video.pause();
+                            } catch (e) {}
+                        }
+                    });
+                }, { threshold: 0.5 });
+                
+                observer.observe(card);
+            });
+            
+            // Initialize
+            window.addEventListener('load', () => {
+                setTimeout(() => {
+                    try {
+                        if (cards[0] && container) {
+                            cards[0].scrollIntoView({
+                                behavior: 'auto',
+                                block: 'nearest',
+                                inline: 'center'
+                            });
+                            updateCards(0);
+                        }
+                        
+                        autoScrollEnabled = true;
+                        startAutoScroll();
+                    } catch (e) {}
+                }, 100);
+            });
+            
+            // Handle resize
+            let resizeTimeout;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(() => {
+                    try {
+                        if (cards[currentIndex] && container) {
+                            cards[currentIndex].scrollIntoView({
+                                behavior: 'auto',
+                                block: 'nearest',
+                                inline: 'center'
+                            });
+                        }
+                    } catch (e) {}
+                }, 100);
+            });
+            
+            // Cleanup
+            window.addEventListener('beforeunload', () => {
+                if (autoScrollTimer) clearTimeout(autoScrollTimer);
+                if (countdownTimer) clearInterval(countdownTimer);
+            });
+            
+        })();
+    </script>
+</body>
+</html>
